@@ -1,0 +1,6 @@
+- repository: Sam-Jeston/hooked-rs
+  branches:
+    - master
+    - develop
+  build:
+    - echo "hello world"
