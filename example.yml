@@ -1,6 +1,8 @@
-- repository: Sam-Jeston/hooked-rs
-  branches:
-    - master
-    - develop
-  build:
-    - echo "hello world"
+
+port: 8000
+targets:
+  - repository: Sam-Jeston/hooked-rs
+    branch: master
+    directory: ~
+    steps:
+      - echo "hello world"
