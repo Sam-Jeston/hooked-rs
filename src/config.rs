@@ -10,7 +10,9 @@ pub struct Target {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
-    pub port: i32,
+    pub port: u16,
+    pub host: String,
+    pub log: String,
     pub targets: Vec<Target>,
 }
 
@@ -29,8 +31,10 @@ mod tests {
     #[test]
     fn parse_valid_yml() {
         let s = "
+        log: ./log
+        host: localhost
         port: 8000
-        targets: 
+        targets:
           - repository: Sam-Jeston/hooked-rs
             branch: master
             directory: /var/www

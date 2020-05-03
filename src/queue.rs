@@ -42,7 +42,6 @@ impl Queue {
         match job {
             None => Ok(()),
             Some(j) => {
-                // TODO: Make shell configurable
                 // TODO: Handle logging. Spawn just iherets stdout & stdin
                 let cmd = Command::new("sh").arg("-c").arg(&j.command).spawn();
                 match cmd {

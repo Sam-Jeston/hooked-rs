@@ -1,9 +1,9 @@
 use super::config::Target;
-use super::queue::Queue;
 use super::job::convert_target_to_job;
-use serde::{Deserialize, Serialize};
+use super::queue::Queue;
 use rocket::State;
 use rocket_contrib::json::Json;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -34,8 +34,7 @@ pub fn process_payload(
 ) -> Option<bool> {
     match &payload.state {
         action if action == "success" => {
-            let target_branch =
-                determine_hook_branch(payload.sha.clone(), &payload.branches);
+            let target_branch = determine_hook_branch(payload.sha.clone(), &payload.branches);
             match target_branch {
                 Some(branch) => {
                     match targets_for_branch(payload.name.clone(), &branch.name, &targets) {
@@ -43,10 +42,10 @@ pub fn process_payload(
                             for t in ts {
                                 let job = convert_target_to_job(t);
                                 queue.add(job).unwrap();
-                            };
+                            }
 
                             Some(true)
-                        },
+                        }
                         None => None,
                     }
                 }
