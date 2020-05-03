@@ -15,6 +15,7 @@ use queue::Queue;
 use rocket::config::{Config, Environment};
 use rocket::State;
 use rocket_contrib::json::Json;
+use std::env;
 use std::fs;
 use std::sync::Arc;
 use std::{thread, time};
@@ -25,8 +26,11 @@ fn hook(targets: State<Vec<config::Target>>, queue: State<Arc<Queue>>, hook: Jso
 }
 
 fn main() {
-    let yml = fs::read_to_string("example.yml").expect("No yaml configuration provided");
-    let config = config::parse_config(yml).expect("yaml failed to parse, better check its format");
+    let args: Vec<String> = env::args().collect();
+    let yml_path = config::parse_args(args).expect("--config <path> must be provided");
+    let yml = fs::read_to_string(yml_path).expect("Config file does not exist");
+    let config =
+        config::parse_config(yml).expect("Config failed to parse, better check its format");
     let queue = Arc::new(Queue::new());
 
     let server_queue_ref = Arc::clone(&queue);
@@ -55,6 +59,6 @@ fn main() {
         }
     });
 
-    server.join().expect("failed to start server");
-    worker.join().expect("failed to start worker");
+    server.join().expect("Failed to start API server");
+    worker.join().expect("Failed to start queue processor");
 }

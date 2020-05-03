@@ -6,8 +6,8 @@ This application was developed to easily facilitate updating small side-projects
 
 ## Getting Started
 
-1. Build the application from source (with the rust nightly toolchain): `cargo build --release`. The output binary path is `./target/release/hooked-rs`
-2. Configure the application via yaml. `example.yml` can be used for reference.
+1. Build the application from source (with the rust nightly toolchain): `cargo build --release`. The default output binary path is `./target/release/hooked-rs`
+2. Configure the application via a yaml file. `example.yml` can be used for reference.
 3. Run it - `./hooked-rs --config path-to-config.yml`
 
 ## YAML Configuration

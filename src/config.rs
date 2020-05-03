@@ -24,6 +24,24 @@ pub fn parse_config(yml: String) -> Option<Config> {
     }
 }
 
+// TODO: Test
+pub fn parse_args<'a>(args: Vec<String>) -> Result<String, &'a str> {
+    let config_param = "--config";
+    let config_position = args.iter().position(|x| x == config_param);
+
+    match config_position {
+        Some(position) => {
+            if position + 1 >= args.len() {
+                Err("Path not provided for --config")
+            } else {
+                let path_argument = &args[position + 1];
+                Ok(path_argument.to_owned())
+            }
+        }
+        None => Err("No config parameter provided"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
