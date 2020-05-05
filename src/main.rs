@@ -6,6 +6,8 @@ extern crate log;
 extern crate serde;
 extern crate serde_yaml;
 extern crate simplelog;
+extern crate base64;
+extern crate rand;
 
 mod config;
 mod handler;
@@ -23,7 +25,9 @@ use std::fs;
 use std::sync::Arc;
 use std::{thread, time};
 use std::fs::File;
-use log::{info};
+use log::info;
+use rand::{Rng};
+use base64::{encode};
 
 #[post("/", format = "json", data = "<hook>")]
 fn hook(targets: State<Vec<config::Target>>, queue: State<Arc<Queue>>, hook: Json<StatusPayload>) {
@@ -45,7 +49,7 @@ fn main() {
     let log_file = File::with_options().append(true).create(true).open(&config_file_path).unwrap();
     CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Info, LogConfig::default(), TerminalMode::Mixed).unwrap(),
+            TermLogger::new(LevelFilter::Warn, LogConfig::default(), TerminalMode::Mixed).unwrap(),
             WriteLogger::new(LevelFilter::Info, LogConfig::default(), log_file),
         ]
     ).unwrap();
@@ -56,11 +60,15 @@ fn main() {
     let queue = Arc::new(Queue::new());
     let server_queue_ref = Arc::clone(&queue);
     let server = thread::spawn(move || {
-        // TODO: Create secret key to prevent warning
+        // Generate entropy for rocket.rs secret to prevent warnings. We don't
+        // use this value.
+        let random_bytes = rand::thread_rng().gen::<[u8; 32]>();
+
         let server_config = Config::build(Environment::Production)
             .address(config.host)
             .port(config.port)
             .log_level(LoggingLevel::Off)
+            .secret_key(encode(random_bytes))
             .finalize()
             .unwrap();
 

@@ -1,10 +1,16 @@
 
 port: 8000
 host: localhost
-log: ./log
+log: ./local.log
 targets:
   - repository: Sam-Jeston/hooked-rs
     branch: master
     directory: ~
     steps:
       - echo "hello world"
+  - repository: Sam-Jeston/hooked-rs
+    branch: feature/improved-configuration
+    directory: ~
+    steps:
+      - echo "hello world"
+      - echo "john boss"

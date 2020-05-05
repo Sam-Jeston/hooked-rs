@@ -1,7 +1,8 @@
 use super::job::Job;
 use std::collections::VecDeque;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::Mutex;
+use log::{info, error};
 
 pub struct Queue {
     pub jobs: Mutex<VecDeque<Job>>,
@@ -42,10 +43,25 @@ impl Queue {
         match job {
             None => Ok(()),
             Some(j) => {
-                // TODO: Handle logging. Spawn just iherets stdout & stdin
-                let cmd = Command::new("sh").arg("-c").arg(&j.command).spawn();
+                info!("Processing job for {}", j.id);
+                let cmd = Command::new("sh")
+                    .arg("-c")
+                    .arg(&j.command)
+                    .stdout(Stdio::piped())
+                    .output();
+                
+
                 match cmd {
-                    Ok(_) => self.process(),
+                    Ok(cmd_res) => {
+                        // TODO: Improve streaming of output from stdout & stderr
+                        if cmd_res.stdout.len() > 0 {
+                            info!("{}", String::from_utf8_lossy(&cmd_res.stdout));
+                        }
+                        if cmd_res.stderr.len() > 0 {
+                            error!("{}", String::from_utf8_lossy(&cmd_res.stderr));
+                        }
+                        self.process()
+                    },
                     Err(_) => Err(j.clone()),
                 }
             }
@@ -61,6 +77,7 @@ mod tests {
     fn can_add_to_queue() {
         let queue = Queue::new();
         let job = Job {
+            id: "x".to_owned(),
             command: format!("cd /var/www;ls stat;echo hello;"),
         };
         queue.add(job.clone()).unwrap();
@@ -76,6 +93,7 @@ mod tests {
     fn can_get_job() {
         let queue = Queue::new();
         let job = Job {
+            id: "x".to_owned(),
             command: format!("cd /var/www;ls stat;echo hello;"),
         };
         queue.add(job.clone()).unwrap();
@@ -91,9 +109,11 @@ mod tests {
     fn gets_jobs_in_fifo_order() {
         let queue = Queue::new();
         let job1 = Job {
+            id: "x".to_owned(),
             command: format!("cd /var/xyz;"),
         };
         let job2 = Job {
+            id: "y".to_owned(),
             command: format!("cd /var/www;"),
         };
         queue.add(job1.clone()).unwrap();
@@ -113,6 +133,7 @@ mod tests {
     fn can_process_empties_queue() {
         let queue = Queue::new();
         let job = Job {
+            id: "x".to_owned(),
             command: format!("echo \"hello world!\";"),
         };
 

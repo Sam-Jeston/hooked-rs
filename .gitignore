@@ -1,1 +1,4 @@
 /target
+
+# Default log file for development
+local.log
