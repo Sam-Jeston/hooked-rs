@@ -30,14 +30,12 @@ pub fn parse_args<'a>(args: Vec<String>) -> Result<String, &'a str> {
     let config_position = args.iter().position(|x| x == config_param);
 
     match config_position {
+        Some(position) if position + 1 >= args.len() => Err("Path not provided for --config"),
+        Some(_) if args.len() > 3 => Err("Too many arguments provided"),
         Some(position) => {
-            if position + 1 >= args.len() {
-                Err("Path not provided for --config")
-            } else {
-                let path_argument = &args[position + 1];
-                Ok(path_argument.to_owned())
-            }
-        }
+            let path_argument = &args[position + 1];
+            Ok(path_argument.to_owned())
+        },
         None => Err("No config parameter provided"),
     }
 }

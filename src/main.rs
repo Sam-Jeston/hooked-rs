@@ -28,10 +28,11 @@ use std::fs::File;
 use log::info;
 use rand::{Rng};
 use base64::{encode};
+use rocket::http::Status;
 
 #[post("/", format = "json", data = "<hook>")]
-fn hook(targets: State<Vec<config::Target>>, queue: State<Arc<Queue>>, hook: Json<StatusPayload>) {
-    handler::process_payload(queue, hook, targets).unwrap();
+fn hook(targets: State<Vec<config::Target>>, queue: State<Arc<Queue>>, hook: Json<StatusPayload>) -> Status {
+    handler::process_payload(queue, hook, targets)
 }
 
 fn main() {
