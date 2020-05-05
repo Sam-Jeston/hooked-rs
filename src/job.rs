@@ -2,11 +2,13 @@ use super::config::Target;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Job {
+    pub id: String,
     pub command: String,
 }
 
 pub fn convert_target_to_job(target: Target) -> Job {
     Job {
+        id: format!("{} {}", target.repository, target.branch),
         command: build_command_string(&target),
     }
 }

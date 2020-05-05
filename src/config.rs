@@ -10,7 +10,9 @@ pub struct Target {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
-    pub port: i32,
+    pub port: u16,
+    pub host: String,
+    pub log: String,
     pub targets: Vec<Target>,
 }
 
@@ -22,6 +24,22 @@ pub fn parse_config(yml: String) -> Option<Config> {
     }
 }
 
+// TODO: Test
+pub fn parse_args<'a>(args: Vec<String>) -> Result<String, &'a str> {
+    let config_param = "--config";
+    let config_position = args.iter().position(|x| x == config_param);
+
+    match config_position {
+        Some(position) if position + 1 >= args.len() => Err("Path not provided for --config"),
+        Some(_) if args.len() > 3 => Err("Too many arguments provided"),
+        Some(position) => {
+            let path_argument = &args[position + 1];
+            Ok(path_argument.to_owned())
+        },
+        None => Err("No config parameter provided"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -29,8 +47,10 @@ mod tests {
     #[test]
     fn parse_valid_yml() {
         let s = "
+        log: ./log
+        host: localhost
         port: 8000
-        targets: 
+        targets:
           - repository: Sam-Jeston/hooked-rs
             branch: master
             directory: /var/www
