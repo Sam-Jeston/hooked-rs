@@ -9,8 +9,9 @@ targets:
     steps:
       - echo "hello world"
   - repository: Sam-Jeston/hooked-rs
-    branch: feature/improved-configuration
+    branch: feature/improved-child-process-handling
     directory: ~
     steps:
-      - echo "hello world"
-      - echo "john boss"
+      - echo "about to sleep for 5 seconds..."
+      - sleep 5
+      - echo "finished sleeping"
