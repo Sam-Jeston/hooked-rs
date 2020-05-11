@@ -1,10 +1,10 @@
 use super::job::Job;
-use std::collections::VecDeque;
-use std::sync::Mutex;
-use log::{info, error};
 use duct::cmd;
+use log::{error, info};
+use std::collections::VecDeque;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::sync::Mutex;
 
 pub struct Queue {
     pub jobs: Mutex<VecDeque<Job>>,
@@ -56,12 +56,12 @@ impl Queue {
                                 Ok(l) => info!("{}", l),
                                 // This is a logging utility. An error here is not great,
                                 // but not worth panicing over
-                                Err(_) => error!("Error when reading process lines")
+                                Err(_) => error!("Error when reading process lines"),
                             }
                         }
 
                         self.process()
-                    },
+                    }
                     Err(_) => Err(j.clone()),
                 }
             }

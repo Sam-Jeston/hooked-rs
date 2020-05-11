@@ -2,38 +2,68 @@
 
 #[macro_use]
 extern crate rocket;
+extern crate base64;
+extern crate duct;
 extern crate log;
+extern crate rand;
+extern crate ring;
 extern crate serde;
+extern crate serde_json;
 extern crate serde_yaml;
 extern crate simplelog;
-extern crate base64;
-extern crate rand;
-extern crate duct;
 
 mod config;
 mod handler;
 mod job;
 mod queue;
+mod signature;
 
+use base64::encode;
 use handler::StatusPayload;
+use log::{info, warn};
 use queue::Queue;
+use rand::Rng;
 use rocket::config::{Config, Environment, LoggingLevel};
+use rocket::http::Status;
 use rocket::State;
-use rocket_contrib::json::Json;
-use simplelog::{TermLogger, CombinedLogger, WriteLogger, LevelFilter, TerminalMode, Config as LogConfig};
+use signature::{verify_signature, GithubSignature};
+use simplelog::{
+    CombinedLogger, Config as LogConfig, LevelFilter, TermLogger, TerminalMode, WriteLogger,
+};
 use std::env;
+use std::env::var;
 use std::fs;
+use std::fs::File;
 use std::sync::Arc;
 use std::{thread, time};
-use std::fs::File;
-use log::info;
-use rand::{Rng};
-use base64::{encode};
-use rocket::http::Status;
 
-#[post("/", format = "json", data = "<hook>")]
-fn hook(targets: State<Vec<config::Target>>, queue: State<Arc<Queue>>, hook: Json<StatusPayload>) -> Status {
-    handler::process_payload(queue, hook, targets)
+#[post("/", format = "json", data = "<raw_hook>")]
+fn hook(
+    targets: State<Vec<config::Target>>,
+    queue: State<Arc<Queue>>,
+    signature: GithubSignature,
+    raw_hook: String,
+) -> Status {
+    info!("{}", &signature.0);
+
+    match serde_json::from_str(&raw_hook) {
+        Ok(h) => {
+            let parsed_hook: StatusPayload = h;
+
+            let signature_secret = var("GITHUB_SECRET");
+            match signature_secret {
+                Ok(s) => {
+                    let valid_signature = verify_signature(s, &signature.0, &raw_hook);
+                    match valid_signature {
+                        true => handler::process_payload(queue, parsed_hook, targets),
+                        false => Status::Unauthorized,
+                    }
+                }
+                Err(_) => handler::process_payload(queue, parsed_hook, targets),
+            }
+        }
+        Err(_) => Status::UnprocessableEntity,
+    }
 }
 
 fn main() {
@@ -48,13 +78,22 @@ fn main() {
     // Initialise the logger
     // A new log file is created if it doesnt already exist
     let config_file_path = config.log.clone();
-    let log_file = File::with_options().append(true).create(true).open(&config_file_path).unwrap();
-    CombinedLogger::init(
-        vec![
-            TermLogger::new(LevelFilter::Info, LogConfig::default(), TerminalMode::Mixed).unwrap(),
-            WriteLogger::new(LevelFilter::Info, LogConfig::default(), log_file),
-        ]
-    ).unwrap();
+    let log_file = File::with_options()
+        .append(true)
+        .create(true)
+        .open(&config_file_path)
+        .unwrap();
+    CombinedLogger::init(vec![
+        TermLogger::new(LevelFilter::Info, LogConfig::default(), TerminalMode::Mixed).unwrap(),
+        WriteLogger::new(LevelFilter::Info, LogConfig::default(), log_file),
+    ])
+    .unwrap();
+
+    let signature_secret = var("GITHUB_SECRET");
+    match signature_secret {
+        Ok(_) => (),
+        Err(_) => warn!("hooked-rs has no GITHUB_SECRET in the environment. Webhooks will not be authenticated.")
+    }
 
     info!("hooked-rs starting with config:");
     info!("{:?}", config);

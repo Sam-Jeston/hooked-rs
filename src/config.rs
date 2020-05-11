@@ -35,7 +35,7 @@ pub fn parse_args<'a>(args: Vec<String>) -> Result<String, &'a str> {
         Some(position) => {
             let path_argument = &args[position + 1];
             Ok(path_argument.to_owned())
-        },
+        }
         None => Err("No config parameter provided"),
     }
 }

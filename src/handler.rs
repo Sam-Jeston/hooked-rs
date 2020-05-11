@@ -1,9 +1,8 @@
 use super::config::Target;
 use super::job::convert_target_to_job;
 use super::queue::Queue;
-use rocket::State;
-use rocket_contrib::json::Json;
 use rocket::http::Status;
+use rocket::State;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -28,34 +27,32 @@ pub struct Commit {
 
 pub fn process_payload(
     queue: State<Arc<Queue>>,
-    payload: Json<StatusPayload>,
+    payload: StatusPayload,
     targets: State<Vec<Target>>,
 ) -> Status {
     let target_branch = determine_hook_branch(payload.sha.clone(), &payload.branches);
     match target_branch {
-        Some(branch) => {
-            match repo_found(payload.name.clone(), &targets) {
-                Some(_) => {
-                    let targets = targets_for_branch(payload.name.clone(), &branch.name, &targets);
-                    match targets.len() {
-                        0 => Status::NoContent,
-                        _ if &payload.state != "success"  => Status::Accepted,
-                        _ => {
-                            for t in targets {
-                                let job = convert_target_to_job(t);
-                                queue.add(job).unwrap();
-                            }
-
-                            Status::Ok
+        Some(branch) => match repo_found(payload.name.clone(), &targets) {
+            Some(_) => {
+                let targets = targets_for_branch(payload.name.clone(), &branch.name, &targets);
+                match targets.len() {
+                    0 => Status::NoContent,
+                    _ if &payload.state != "success" => Status::Accepted,
+                    _ => {
+                        for t in targets {
+                            let job = convert_target_to_job(t);
+                            queue.add(job).unwrap();
                         }
+
+                        Status::Ok
                     }
-                },
-                None => Status::NotFound
+                }
             }
+            None => Status::NotFound,
         },
         // If we don't match the hook branch, then this is a logic failure, hence the 500
-        None => Status::InternalServerError
-    } 
+        None => Status::InternalServerError,
+    }
 }
 
 fn determine_hook_branch(target_sha: String, branches: &Vec<Branch>) -> Option<&Branch> {
@@ -64,20 +61,11 @@ fn determine_hook_branch(target_sha: String, branches: &Vec<Branch>) -> Option<&
         .find(|&branch| branch.commit.sha == target_sha)
 }
 
-fn repo_found(
-    repo: String,
-    targets: &Vec<Target>,
-) -> Option<&Target> {
-    targets
-        .iter()
-        .find(|&target| target.repository == repo)
+fn repo_found(repo: String, targets: &Vec<Target>) -> Option<&Target> {
+    targets.iter().find(|&target| target.repository == repo)
 }
 
-fn targets_for_branch(
-    repo: String,
-    branch_name: &str,
-    targets: &Vec<Target>,
-) -> Vec<Target> {
+fn targets_for_branch(repo: String, branch_name: &str, targets: &Vec<Target>) -> Vec<Target> {
     targets
         .iter()
         .filter(|&target| -> bool {
