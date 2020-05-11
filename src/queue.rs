@@ -1,8 +1,10 @@
 use super::job::Job;
 use std::collections::VecDeque;
-use std::process::{Command, Stdio};
 use std::sync::Mutex;
-use log::{info, error};
+use log::{info};
+use duct::cmd;
+use std::io::prelude::*;
+use std::io::BufReader;
 
 pub struct Queue {
     pub jobs: Mutex<VecDeque<Job>>,
@@ -44,22 +46,15 @@ impl Queue {
             None => Ok(()),
             Some(j) => {
                 info!("Processing job for {}", j.id);
-                let cmd = Command::new("sh")
-                    .arg("-c")
-                    .arg(&j.command)
-                    .stdout(Stdio::piped())
-                    .output();
-                
+                let cmd = cmd!("sh", "-c", &j.command).stderr_to_stdout().reader();
 
                 match cmd {
-                    Ok(cmd_res) => {
-                        // TODO: Improve streaming of output from stdout & stderr
-                        if cmd_res.stdout.len() > 0 {
-                            info!("{}", String::from_utf8_lossy(&cmd_res.stdout));
+                    Ok(reader) => {
+                        let lines = BufReader::new(reader).lines();
+                        for line in lines {
+                            info!("{}", line.unwrap());
                         }
-                        if cmd_res.stderr.len() > 0 {
-                            error!("{}", String::from_utf8_lossy(&cmd_res.stderr));
-                        }
+
                         self.process()
                     },
                     Err(_) => Err(j.clone()),

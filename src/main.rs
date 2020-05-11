@@ -8,6 +8,7 @@ extern crate serde_yaml;
 extern crate simplelog;
 extern crate base64;
 extern crate rand;
+extern crate duct;
 
 mod config;
 mod handler;
