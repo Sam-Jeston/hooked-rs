@@ -1,7 +1,7 @@
 use super::job::Job;
 use std::collections::VecDeque;
 use std::sync::Mutex;
-use log::{info};
+use log::{info, error};
 use duct::cmd;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -52,7 +52,12 @@ impl Queue {
                     Ok(reader) => {
                         let lines = BufReader::new(reader).lines();
                         for line in lines {
-                            info!("{}", line.unwrap());
+                            match line {
+                                Ok(l) => info!("{}", l),
+                                // This is a logging utility. An error here is not great,
+                                // but not worth panicing over
+                                Err(_) => error!("Error when reading process lines")
+                            }
                         }
 
                         self.process()

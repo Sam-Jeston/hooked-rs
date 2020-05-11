@@ -51,7 +51,7 @@ fn main() {
     let log_file = File::with_options().append(true).create(true).open(&config_file_path).unwrap();
     CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Warn, LogConfig::default(), TerminalMode::Mixed).unwrap(),
+            TermLogger::new(LevelFilter::Info, LogConfig::default(), TerminalMode::Mixed).unwrap(),
             WriteLogger::new(LevelFilter::Info, LogConfig::default(), log_file),
         ]
     ).unwrap();
@@ -87,8 +87,8 @@ fn main() {
             // Check the queue for jobs every five seconds. The queue
             // will process itslef recursively until it is empty.
             worker_queue_ref.process().unwrap();
-            let one_second = time::Duration::from_millis(5000);
-            thread::sleep(one_second);
+            let five_seconds = time::Duration::from_millis(5000);
+            thread::sleep(five_seconds);
         }
     });
 
